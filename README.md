@@ -82,6 +82,14 @@ npm run desktop:build
 
 Os arquivos serão criados na pasta `release/`.
 
+### Download para Windows
+
+Baixe o instalador mais recente do GestãoSaaS na página de
+[Releases do GitHub](https://github.com/messiasmdesa463-coder/gestao-saas-sistema-de-gestao-empresarial/releases/latest).
+
+Depois de baixar, execute `GestaoSaaS-Setup.exe` ou o arquivo `.exe` disponível
+na versão publicada e siga as instruções do instalador.
+
 ## Avaliações do sistema
 
 ### Nota geral: 4,9/5
