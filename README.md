@@ -47,6 +47,16 @@ O GestãoSaaS foi desenvolvido para centralizar processos essenciais de uma empr
 npm install
 ```
 
+### Autenticação e banco
+
+O frontend usa Firebase Authentication para login, cadastro e recuperação de
+senha. Ative o provedor **E-mail/senha** no Firebase Console antes de usar o
+sistema. Nunca grave senhas nos documentos do Firestore.
+
+O backend PHP exige `DB_HOST`, `DB_NAME`, `DB_USER` e `DB_PASS` configurados no
+ambiente; consulte `.env.example`. Ele não usa mais usuário `root` nem aceita
+senha vazia.
+
 ## Execução local
 
 ```bash

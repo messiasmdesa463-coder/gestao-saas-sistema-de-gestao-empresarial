@@ -30,6 +30,7 @@ interface AuthModalProps {
   onClose: () => void;
   isFullScreen?: boolean;
   onSuccessLogin: (user: User, company: Company | null) => void;
+  onAuthenticate: (identifier: string, password: string) => Promise<{ user: User; company: Company | null }>;
   onRegisterCompany: (companyData: {
     razao_social: string;
     nome_fantasia: string;
@@ -39,8 +40,8 @@ interface AuthModalProps {
     nome_dono: string;
     email_dono: string;
     senha_dono: string;
-  }) => { success: boolean; message: string };
-  onResetPassword?: (emailOrCnpj: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
+  }) => Promise<{ success: boolean; message: string }>;
+  onResetPassword?: (emailOrCnpj: string) => Promise<{ success: boolean; message: string }>;
   companies: Company[];
   users: User[];
 }
@@ -134,62 +135,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
 
-    const cleanInput = identifier.trim();
-    const cleanDigits = cleanInput.replace(/\D/g, '');
-
-    // Busca usuário por CNPJ ou por E-mail
-    let matchedUser: User | undefined;
-    let matchedCompany: Company | null = null;
-
-    if (cleanDigits.length === 14) {
-      // Login por CNPJ da empresa
-      matchedCompany = companies.find(c => c.cnpj && c.cnpj.replace(/\D/g, '') === cleanDigits) || null;
-      if (matchedCompany) {
-        matchedUser = users.find(u => u.empresa_id === matchedCompany!.id && (u.perfil === 'dono' || u.perfil === 'gerente'));
-      }
-    } else {
-      // Login por E-mail
-      matchedUser = users.find(u => u.email.toLowerCase() === cleanInput.toLowerCase());
-      if (matchedUser && matchedUser.empresa_id) {
-        matchedCompany = companies.find(c => c.id === matchedUser!.empresa_id) || null;
-      }
-    }
-
-    if (!matchedUser) {
-      setLoginError('Nenhum usuário ou empresa encontrado com este E-mail/CNPJ.');
-      return;
-    }
-
-    // Validação de Senha (se definida pelo usuário no cadastro)
-    if (matchedUser.senha && loginPassword && matchedUser.senha !== loginPassword) {
-      setLoginError('Senha incorreta. Verifique a senha digitada.');
-      return;
-    }
-
-    // Se for admin, não precisa de empresa
-    if (matchedUser.perfil === 'admin') {
-      onSuccessLogin(matchedUser, null);
+    try {
+      const result = await onAuthenticate(identifier.trim(), loginPassword);
+      onSuccessLogin(result.user, result.company);
       onClose();
-      return;
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : 'Não foi possível autenticar.');
     }
-
-    // Validação de Status da Empresa
-    if (matchedCompany) {
-      if (matchedCompany.status === 'rejeitada' || matchedCompany.status === 'suspensa') {
-        setLoginError(`Acesso bloqueado: o status da empresa é ${matchedCompany.status.toUpperCase()}. Entre em contato com o suporte.`);
-        return;
-      }
-    }
-
-    onSuccessLogin(matchedUser, matchedCompany);
-    onClose();
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegErrorMessage('');
     setLoginSuccessMessage('');
@@ -199,7 +158,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    const res = onRegisterCompany({
+    const res = await onRegisterCompany({
       razao_social: regRazao,
       nome_fantasia: regFantasia || regRazao,
       cnpj: regCnpj,
@@ -313,7 +272,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsSubmittingReset(true);
     try {
       if (onResetPassword) {
-        const res = await onResetPassword(recEmail, recNewPassword);
+        const res = await onResetPassword(recEmail);
         if (res.success) {
           setIdentifier(recEmail);
           setLoginPassword('');

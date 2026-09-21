@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth } from './lib/firebase';
 import { 
   MOCK_COMPANIES, 
   MOCK_USERS, 
@@ -136,7 +138,11 @@ export default function App() {
       }
     };
 
-    setupFirestore();
+    const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setupFirestore();
+      }
+    });
 
     return () => {
       unsubCompanies?.();
@@ -144,6 +150,7 @@ export default function App() {
       unsubProducts?.();
       unsubMovements?.();
       unsubTickets?.();
+      unsubAuth();
     };
   }, []);
 
@@ -522,7 +529,7 @@ export default function App() {
   };
 
   // Cadastrar Nova Empresa (Formulário do AuthModal)
-  const handleRegisterCompany = (companyData: {
+  const handleRegisterCompany = async (companyData: {
     razao_social: string;
     nome_fantasia: string;
     cnpj: string;
@@ -531,7 +538,7 @@ export default function App() {
     nome_dono: string;
     email_dono: string;
     senha_dono: string;
-  }): { success: boolean; message: string } => {
+  }): Promise<{ success: boolean; message: string }> => {
     // Validação de duplicidade de CNPJ
     const cleanNewCnpj = companyData.cnpj.replace(/\D/g, '');
     const exists = companies.some(c => c.cnpj && c.cnpj.replace(/\D/g, '') === cleanNewCnpj);
@@ -549,7 +556,7 @@ export default function App() {
       cnpj: companyData.cnpj,
       email: companyData.email,
       telefone: companyData.telefone,
-      status: 'aprovada', // Aprovada automaticamente para o proprietário entrar de imediato
+      status: 'pendente',
       cor_tema: '#2563eb',
       created_at: now,
       updated_at: now
@@ -561,8 +568,8 @@ export default function App() {
       empresa_id: newCompId,
       nome: companyData.nome_dono,
       email: companyData.email_dono,
-      senha: companyData.senha_dono,
       cnpj: companyData.cnpj,
+      uid: '',
       perfil: 'dono',
       cargo: 'Diretor / Fundador',
       departamento: 'Diretoria Geral',
@@ -570,12 +577,17 @@ export default function App() {
       created_at: now
     };
 
-    setCompanies(prev => [newComp, ...prev]);
-    setUsers(prev => [newOwner, ...prev]);
-
-    // Persiste no Firestore
-    dbUpdateCompany(newComp).catch(err => console.error('Erro ao registrar empresa no Firestore:', err));
-    dbSaveUser(newOwner).catch(err => console.error('Erro ao registrar dono no Firestore:', err));
+    try {
+      const credential = await createUserWithEmailAndPassword(auth, companyData.email_dono, companyData.senha_dono);
+      const authenticatedOwner = { ...newOwner, uid: credential.user.uid };
+      setCompanies(prev => [newComp, ...prev]);
+      setUsers(prev => [authenticatedOwner, ...prev]);
+      await dbUpdateCompany(newComp);
+      await dbSaveUser(authenticatedOwner);
+      await signOut(auth);
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : 'Não foi possível criar a conta.' };
+    }
 
     return { 
       success: true, 
@@ -584,39 +596,31 @@ export default function App() {
   };
 
   // Redefinição de senha solicitada pelo usuário (código de 15 minutos verificado)
-  const handleResetPassword = async (emailOrCnpj: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
-    const cleanSearch = emailOrCnpj.trim().toLowerCase();
-    const cleanDigits = emailOrCnpj.replace(/\D/g, '');
-
-    let matchedUser: User | undefined;
-    if (cleanDigits.length === 14) {
-      const comp = companies.find(c => c.cnpj && c.cnpj.replace(/\D/g, '') === cleanDigits);
-      if (comp) {
-        matchedUser = users.find(u => u.empresa_id === comp.id && (u.perfil === 'dono' || u.perfil === 'gerente'));
-      }
+  const handleResetPassword = async (emailOrCnpj: string): Promise<{ success: boolean; message: string }> => {
+    const email = emailOrCnpj.trim();
+    if (!email.includes('@')) {
+      return { success: false, message: 'Informe o e-mail cadastrado para receber o link seguro de redefinição.' };
     }
+    await sendPasswordResetEmail(auth, email);
+    return { success: true, message: 'Enviamos um link seguro de redefinição para seu e-mail.' };
+  };
 
-    if (!matchedUser) {
-      matchedUser = users.find(u => u.email && u.email.toLowerCase() === cleanSearch);
+  const handleAuthenticate = async (identifier: string, password: string): Promise<{ user: User; company: Company | null }> => {
+    if (!identifier.includes('@')) {
+      throw new Error('Use o e-mail cadastrado para entrar. O login por CNPJ será disponibilizado após a autenticação centralizada.');
     }
-
-    if (matchedUser) {
-      const updatedUser: User = {
-        ...matchedUser,
-        senha: newPassword
-      };
-      setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-      try {
-        await dbSaveUser(updatedUser);
-      } catch (err) {
-        console.error('Erro ao persistir nova senha no Firestore:', err);
-      }
+    const credential = await signInWithEmailAndPassword(auth, identifier, password);
+    const user = users.find(item => item.uid === credential.user.uid || item.email.toLowerCase() === credential.user.email?.toLowerCase());
+    if (!user) {
+      await signOut(auth);
+      throw new Error('Conta autenticada, mas perfil de acesso não encontrado.');
     }
-
-    return {
-      success: true,
-      message: 'Sua senha foi redefinida com sucesso! Faça login com sua nova senha.'
-    };
+    const company = user.empresa_id ? companies.find(item => item.id === user.empresa_id) || null : null;
+    if (company && (company.status === 'rejeitada' || company.status === 'suspensa')) {
+      await signOut(auth);
+      throw new Error(`Acesso bloqueado: o status da empresa é ${company.status.toUpperCase()}.`);
+    }
+    return { user, company };
   };
 
   // Login bem sucedido via AuthModal
@@ -634,6 +638,7 @@ export default function App() {
 
   // Logout do sistema
   const handleLogout = () => {
+    signOut(auth).catch(err => console.error('Erro ao encerrar sessão Firebase:', err));
     setCurrentUser(null);
     setCurrentCompany(null);
     localStorage.removeItem('gestao_saas_user');
@@ -669,6 +674,7 @@ export default function App() {
           isFullScreen={true}
           onClose={() => {}}
           onSuccessLogin={handleSuccessLogin}
+          onAuthenticate={handleAuthenticate}
           onRegisterCompany={handleRegisterCompany}
           onResetPassword={handleResetPassword}
           companies={companies}
@@ -839,6 +845,7 @@ export default function App() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onSuccessLogin={handleSuccessLogin}
+        onAuthenticate={handleAuthenticate}
         onRegisterCompany={handleRegisterCompany}
         onResetPassword={handleResetPassword}
         companies={companies}
