@@ -92,6 +92,13 @@ Para Windows, execute o arquivo `.exe` disponível na versão publicada e siga
 as instruções do instalador. O pré-lançamento pode apresentar mudanças e
 instabilidades antes da versão oficial.
 
+### Download para Android
+
+Baixe o APK de pré-lançamento na mesma página de
+[Releases do GitHub](https://github.com/messiasmdesa463-coder/gestao-saas-sistema-de-gestao-empresarial/releases/latest).
+No Android, permita a instalação de aplicativos desta fonte quando solicitado
+e abra o arquivo `GestaoSaaS-0.0.0-android-debug.apk`.
+
 ## Avaliações do sistema
 
 ### Nota geral: 4,9/5
