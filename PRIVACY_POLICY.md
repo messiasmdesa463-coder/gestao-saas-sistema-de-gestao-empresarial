@@ -35,6 +35,10 @@ monitoramento antes de uso em produção. Este repositório não fornece
 credenciais padrão; o primeiro administrador deve ser configurado de forma
 segura no ambiente da implantação.
 
+As regras de acesso do Firestore exigem autenticação. Antes de publicar uma
+instância, configure o Firebase Authentication e substitua as regras-base por
+regras de autorização por usuário, empresa e perfil.
+
 ## Direitos e contato
 
 Solicitações relacionadas a acesso, correção, exclusão ou informações sobre o
