@@ -87,6 +87,16 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [language, setLanguage] = useState<'pt-BR' | 'en' | 'es'>(() => {
+    const saved = localStorage.getItem('gestao_saas_language');
+    return saved === 'en' || saved === 'es' ? saved : 'pt-BR';
+  });
+
+  const handleLanguageChange = (nextLanguage: 'pt-BR' | 'en' | 'es') => {
+    setLanguage(nextLanguage);
+    localStorage.setItem('gestao_saas_language', nextLanguage);
+    showToast('Idioma atualizado com sucesso.', 'success');
+  };
 
   // Gatilhos de Movimentação Rápida de Estoque
   const [stockModalType, setStockModalType] = useState<'entrada' | 'saida' | null>(null);
@@ -741,6 +751,7 @@ export default function App() {
           pendingCount={pendingCompaniesCount}
           lowStockCount={lowStockCount}
           openTicketsCount={openTicketsCount}
+          language={language}
         />
 
         {/* Main Content View */}
@@ -807,6 +818,8 @@ export default function App() {
             <SettingsView
               currentCompany={currentCompany}
               onSaveSettings={handleSaveCompanySettings}
+              language={language}
+              onLanguageChange={handleLanguageChange}
             />
           )}
 
