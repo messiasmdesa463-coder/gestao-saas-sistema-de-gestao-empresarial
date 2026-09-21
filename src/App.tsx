@@ -50,6 +50,8 @@ import {
   dbSaveTicket
 } from './services/firestoreService';
 
+const PRIMARY_ADMIN_EMAIL = 'messiasmdesa463@gmail.com';
+
 export default function App() {
   // Estado das Coleções de Dados do Sistema
   const [companies, setCompanies] = useState<Company[]>(MOCK_COMPANIES);
@@ -580,7 +582,7 @@ export default function App() {
       email: companyData.email_dono,
       cnpj: companyData.cnpj,
       uid: '',
-      perfil: 'dono',
+      perfil: companyData.email_dono.trim().toLowerCase() === PRIMARY_ADMIN_EMAIL ? 'admin' : 'dono',
       cargo: 'Diretor / Fundador',
       departamento: 'Diretoria Geral',
       ativo: true,
@@ -620,7 +622,10 @@ export default function App() {
       throw new Error('Use o e-mail cadastrado para entrar. O login por CNPJ será disponibilizado após a autenticação centralizada.');
     }
     const credential = await signInWithEmailAndPassword(auth, identifier, password);
-    const user = users.find(item => item.uid === credential.user.uid || item.email.toLowerCase() === credential.user.email?.toLowerCase());
+    const storedUser = users.find(item => item.uid === credential.user.uid || item.email.toLowerCase() === credential.user.email?.toLowerCase());
+    const user = storedUser && credential.user.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL
+      ? { ...storedUser, perfil: 'admin' as UserRole }
+      : storedUser;
     if (!user) {
       await signOut(auth);
       throw new Error('Conta autenticada, mas perfil de acesso não encontrado.');
