@@ -1,0 +1,131 @@
+{
+  "entities": {
+    "Company": {
+      "title": "Empresa",
+      "description": "Dados das empresas cadastradas no sistema SaaS multi-tenant",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number", "description": "ID numérico da empresa" },
+        "razao_social": { "type": "string", "description": "Razão Social da Empresa" },
+        "nome_fantasia": { "type": "string", "description": "Nome Fantasia" },
+        "cnpj": { "type": "string", "description": "CNPJ formatado ou apenas dígitos" },
+        "email": { "type": "string", "description": "E-mail de contato institucional" },
+        "telefone": { "type": "string", "description": "Telefone de contato" },
+        "endereco": { "type": "string", "description": "Logradouro e número" },
+        "cidade": { "type": "string", "description": "Cidade sede" },
+        "estado": { "type": "string", "description": "UF sede" },
+        "status": { "type": "string", "enum": ["pendente", "aprovada", "rejeitada", "suspensa"], "description": "Status de aprovação pelo admin" },
+        "logo_url": { "type": "string", "description": "URL do logotipo da empresa" },
+        "banner_url": { "type": "string", "description": "URL do banner do cabeçalho" },
+        "cor_tema": { "type": "string", "description": "Cor hexadecimal do tema" },
+        "created_at": { "type": "string", "description": "Data de criação" },
+        "updated_at": { "type": "string", "description": "Data de última alteração" }
+      },
+      "required": ["id", "razao_social", "nome_fantasia", "cnpj", "email", "status"]
+    },
+    "User": {
+      "title": "Usuário",
+      "description": "Usuários e colaboradores com permissões baseadas em funções (RBAC)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number", "description": "ID numérico do usuário" },
+        "empresa_id": { "type": "number", "description": "ID da empresa vinculada, ou nulo se for Admin Global" },
+        "nome": { "type": "string", "description": "Nome completo do usuário" },
+        "email": { "type": "string", "description": "E-mail para login" },
+        "perfil": { "type": "string", "enum": ["admin", "dono", "gerente", "funcionario"], "description": "Nível de acesso RBAC" },
+        "cargo": { "type": "string", "description": "Cargo corporativo" },
+        "departamento": { "type": "string", "description": "Departamento interno" },
+        "ativo": { "type": "boolean", "description": "Se a conta está habilitada" },
+        "created_at": { "type": "string", "description": "Data de criação do usuário" }
+      },
+      "required": ["id", "nome", "email", "perfil", "ativo"]
+    },
+    "Product": {
+      "title": "Produto",
+      "description": "Catálogo de produtos em estoque com controle de estoque mínimo e preços",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number", "description": "ID do produto" },
+        "empresa_id": { "type": "number", "description": "ID da empresa proprietária do produto" },
+        "nome": { "type": "string", "description": "Nome do item" },
+        "sku": { "type": "string", "description": "Código SKU único" },
+        "codigo_barras": { "type": "string", "description": "Código EAN/GTIN" },
+        "categoria": { "type": "string", "description": "Categoria do produto" },
+        "preco_custo": { "type": "number", "description": "Preço de custo unitário" },
+        "preco_venda": { "type": "number", "description": "Preço de venda ao consumidor" },
+        "estoque_atual": { "type": "number", "description": "Quantidade atual disponível" },
+        "estoque_minimo": { "type": "number", "description": "Ponto de reposição / alerta de estoque" },
+        "unidade_medida": { "type": "string", "description": "UN, CX, KG, LT, PC, etc." },
+        "localizacao": { "type": "string", "description": "Corredor / Prateleira no depósito" },
+        "ativo": { "type": "boolean", "description": "Status ativo no catálogo" },
+        "created_at": { "type": "string", "description": "Data de cadastro" }
+      },
+      "required": ["id", "empresa_id", "nome", "sku", "preco_custo", "preco_venda", "estoque_atual", "estoque_minimo"]
+    },
+    "StockMovement": {
+      "title": "Movimentação de Estoque",
+      "description": "Kardex com histórico auditável de entradas, saídas e ajustes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number", "description": "ID da movimentação" },
+        "empresa_id": { "type": "number", "description": "ID da empresa" },
+        "produto_id": { "type": "number", "description": "ID do produto movimentado" },
+        "produto_nome": { "type": "string", "description": "Nome do produto arquivado no momento" },
+        "usuario_id": { "type": "number", "description": "ID do operador" },
+        "usuario_nome": { "type": "string", "description": "Nome do operador" },
+        "tipo": { "type": "string", "enum": ["entrada", "saida", "ajuste", "devolucao"], "description": "Tipo da movimentação" },
+        "quantidade": { "type": "number", "description": "Volume movimentado" },
+        "saldo_anterior": { "type": "number", "description": "Saldo antes do movimento" },
+        "saldo_posterior": { "type": "number", "description": "Saldo após o movimento" },
+        "motivo": { "type": "string", "description": "Justificativa da movimentação" },
+        "documento_ref": { "type": "string", "description": "Número da NF ou Pedido" },
+        "valor_unitario": { "type": "number", "description": "Valor praticado" },
+        "created_at": { "type": "string", "description": "Carimbo de data/hora do registro" }
+      },
+      "required": ["id", "empresa_id", "produto_id", "tipo", "quantidade", "saldo_anterior", "saldo_posterior"]
+    },
+    "Ticket": {
+      "title": "Ticket de Suporte",
+      "description": "Chamados de suporte técnico e solicitações de clientes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number", "description": "Número do ticket" },
+        "empresa_id": { "type": "number", "description": "ID da empresa solicitante" },
+        "empresa_nome": { "type": "string", "description": "Nome da empresa" },
+        "usuario_id": { "type": "number", "description": "ID do usuário solicitante" },
+        "usuario_nome": { "type": "string", "description": "Nome do usuário solicitante" },
+        "titulo": { "type": "string", "description": "Assunto do chamado" },
+        "categoria": { "type": "string", "description": "Categoria do chamado" },
+        "prioridade": { "type": "string", "enum": ["baixa", "media", "alta", "urgente"], "description": "Nível de urgência" },
+        "status": { "type": "string", "enum": ["aberto", "em_atendimento", "resolvido", "fechado"], "description": "Estado atual do ticket" },
+        "descricao": { "type": "string", "description": "Mensagem inicial" },
+        "mensagens": { "type": "array", "description": "Histórico de respostas" },
+        "created_at": { "type": "string", "description": "Data de abertura" },
+        "updated_at": { "type": "string", "description": "Data da última resposta" }
+      },
+      "required": ["id", "empresa_id", "usuario_id", "titulo", "categoria", "prioridade", "status"]
+    }
+  },
+  "firestore": {
+    "/companies/{companyId}": {
+      "schema": "Company",
+      "description": "Coleção de empresas cadastradas no SaaS"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Coleção de usuários de todas as empresas e administradores"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Catálogo de produtos mantidos por empresa"
+    },
+    "/movements/{movementId}": {
+      "schema": "StockMovement",
+      "description": "Kardex de movimentações de estoque em tempo real"
+    },
+    "/tickets/{ticketId}": {
+      "schema": "Ticket",
+      "description": "Central de tickets de suporte e chamados internos"
+    }
+  }
+}
