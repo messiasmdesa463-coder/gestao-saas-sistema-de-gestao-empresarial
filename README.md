@@ -82,13 +82,15 @@ npm run desktop:build
 
 Os arquivos serão criados na pasta `release/`.
 
-### Download para Windows
+### Download de pré-lançamento
 
-Baixe o instalador mais recente do GestãoSaaS na página de
+Esta é uma versão de **pré-lançamento** para testes e validação. Baixe o
+instalador mais recente do GestãoSaaS na página de
 [Releases do GitHub](https://github.com/messiasmdesa463-coder/gestao-saas-sistema-de-gestao-empresarial/releases/latest).
 
-Depois de baixar, execute `GestaoSaaS-Setup.exe` ou o arquivo `.exe` disponível
-na versão publicada e siga as instruções do instalador.
+Para Windows, execute o arquivo `.exe` disponível na versão publicada e siga
+as instruções do instalador. O pré-lançamento pode apresentar mudanças e
+instabilidades antes da versão oficial.
 
 ## Avaliações do sistema
 
