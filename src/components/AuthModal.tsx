@@ -51,6 +51,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   isFullScreen = false,
   onSuccessLogin,
+  onAuthenticate,
   onRegisterCompany,
   onResetPassword,
   companies,
