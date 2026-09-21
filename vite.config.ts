@@ -5,6 +5,9 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    // Electron loads the packaged app from file://, so bundled assets must
+    // resolve relative to dist/index.html.
+    base: './',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
