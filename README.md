@@ -3,7 +3,7 @@
 Sistema de gestão empresarial para pequenas e médias empresas, com foco em automação operacional, controle de estoque, gestão de clientes, funcionários, tickets e administração de empresas.
 
 <div align="center">
-  <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1400&q=80" alt="Sistema de gestão empresarial" width="1000" />
+  <img src="docs/dashboard-preview.svg" alt="Prévia do painel GestãoSaaS" width="1000" />
 </div>
 
 ## Visão geral
@@ -64,18 +64,6 @@ http://localhost:3000
 ```bash
 npm run build
 ```
-
-## Credenciais de demonstração
-
-### Administrador global
-
-- E-mail: admin@saas.com.br
-- Senha: Admin@123
-
-### Dono da empresa
-
-- E-mail: dono@empresa.com.br
-- Senha: Dono@123
 
 ## Avaliações do sistema
 

@@ -31,9 +31,9 @@ infraestrutura. Não venda dados pessoais.
 ## Segurança e responsabilidade da implantação
 
 A implantação deve configurar regras de acesso, segredos, backups, retenção e
-monitoramento antes de uso em produção. As credenciais de demonstração
-presentes na documentação são apenas para desenvolvimento e devem ser
-substituídas ou removidas em ambientes reais.
+monitoramento antes de uso em produção. Este repositório não fornece
+credenciais padrão; o primeiro administrador deve ser configurado de forma
+segura no ambiente da implantação.
 
 ## Direitos e contato
 
