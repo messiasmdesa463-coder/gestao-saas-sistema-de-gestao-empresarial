@@ -111,6 +111,11 @@ export async function dbSaveUser(user: User): Promise<void> {
   await setDoc(doc(db, 'users', String(user.id)), user, { merge: true });
 }
 
+export async function dbGetUsers(): Promise<User[]> {
+  const snapshot = await getDocs(collection(db, 'users'));
+  return snapshot.docs.map(item => item.data() as User);
+}
+
 export async function dbUpdateCompany(company: Company): Promise<void> {
   await setDoc(doc(db, 'companies', String(company.id)), company, { merge: true });
 }

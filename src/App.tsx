@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from 'firebase/auth';
 import { auth } from './lib/firebase';
 import { 
   MOCK_COMPANIES, 
@@ -45,6 +45,7 @@ import {
   dbDeleteProduct,
   dbSaveStockMovement,
   dbSaveUser,
+  dbGetUsers,
   dbUpdateCompany,
   dbUpdateCompanyStatus,
   dbSaveTicket
@@ -106,10 +107,46 @@ export default function App() {
 
   // Toast Notification
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const primaryAdminProfilePromise = React.useRef<Promise<User | null> | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
+  };
+
+  const ensurePrimaryAdminProfile = async (firebaseUser: FirebaseUser, knownUsers: User[]): Promise<User | null> => {
+    if (firebaseUser.email?.toLowerCase() !== PRIMARY_ADMIN_EMAIL) return null;
+    if (primaryAdminProfilePromise.current) return primaryAdminProfilePromise.current;
+
+    primaryAdminProfilePromise.current = (async () => {
+      const persistedUsers = await dbGetUsers();
+      const allKnownUsers = [...knownUsers, ...persistedUsers.filter(persisted => !knownUsers.some(known => known.id === persisted.id))];
+      const existing = allKnownUsers.find(user => user.uid === firebaseUser.uid || user.email.toLowerCase() === PRIMARY_ADMIN_EMAIL);
+      const adminProfile: User = {
+        id: existing?.id ?? (allKnownUsers.length > 0 ? Math.max(...allKnownUsers.map(user => user.id)) + 1 : 1),
+        empresa_id: null,
+        nome: existing?.nome || firebaseUser.displayName || 'Administrador principal',
+        email: PRIMARY_ADMIN_EMAIL,
+        uid: firebaseUser.uid,
+        perfil: 'admin',
+        cargo: existing?.cargo || 'Administrador principal',
+        departamento: existing?.departamento || 'Administração',
+        ativo: true,
+        created_at: existing?.created_at || new Date().toISOString().replace('T', ' ').substring(0, 19)
+      };
+
+      await dbSaveUser(adminProfile);
+      setUsers(previous => {
+        const withoutDuplicate = previous.filter(user => user.id !== adminProfile.id && user.uid !== firebaseUser.uid && user.email.toLowerCase() !== PRIMARY_ADMIN_EMAIL);
+        return [...withoutDuplicate, adminProfile];
+      });
+      return adminProfile;
+    })().catch(error => {
+      primaryAdminProfilePromise.current = null;
+      throw error;
+    });
+
+    return primaryAdminProfilePromise.current;
   };
 
   // Inicialização e sincronização contínua com Firestore
@@ -152,7 +189,20 @@ export default function App() {
 
     const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        setupFirestore();
+        void (async () => {
+          await setupFirestore();
+          if (firebaseUser.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL) {
+            const adminProfile = await ensurePrimaryAdminProfile(firebaseUser, users);
+            if (adminProfile) {
+              setCurrentUser(adminProfile);
+              setCurrentCompany(null);
+              localStorage.setItem('gestao_saas_user', JSON.stringify(adminProfile));
+              localStorage.removeItem('gestao_saas_company');
+            }
+          }
+        })().catch(error => {
+          console.error('Erro ao restaurar perfil autenticado:', error);
+        });
       }
     });
 
@@ -623,19 +673,22 @@ export default function App() {
     }
     const credential = await signInWithEmailAndPassword(auth, identifier, password);
     const storedUser = users.find(item => item.uid === credential.user.uid || item.email.toLowerCase() === credential.user.email?.toLowerCase());
-    const user = storedUser && credential.user.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL
-      ? { ...storedUser, perfil: 'admin' as UserRole }
+    const user = credential.user.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL
+      ? await ensurePrimaryAdminProfile(credential.user, users)
       : storedUser;
-    if (!user) {
+    const normalizedUser = user && credential.user.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL
+      ? { ...user, uid: credential.user.uid, perfil: 'admin' as UserRole }
+      : user;
+    if (!normalizedUser) {
       await signOut(auth);
       throw new Error('Conta autenticada, mas perfil de acesso não encontrado.');
     }
-    const company = user.empresa_id ? companies.find(item => item.id === user.empresa_id) || null : null;
+    const company = normalizedUser.empresa_id ? companies.find(item => item.id === normalizedUser.empresa_id) || null : null;
     if (company && (company.status === 'rejeitada' || company.status === 'suspensa')) {
       await signOut(auth);
       throw new Error(`Acesso bloqueado: o status da empresa é ${company.status.toUpperCase()}.`);
     }
-    return { user, company };
+    return { user: normalizedUser, company };
   };
 
   // Login bem sucedido via AuthModal
