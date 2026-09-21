@@ -99,6 +99,14 @@ Baixe o APK de pré-lançamento na mesma página de
 No Android, permita a instalação de aplicativos desta fonte quando solicitado
 e abra o arquivo `GestaoSaaS-0.0.0-android-debug.apk`.
 
+### Download para Linux e macOS
+
+O pré-lançamento também possui configuração para pacotes Linux (`AppImage` e
+`.deb`) e macOS (`.dmg` e `.zip`). Baixe os arquivos disponíveis na página de
+[Releases do GitHub](https://github.com/messiasmdesa463-coder/gestao-saas-sistema-de-gestao-empresarial/releases/latest).
+O pacote macOS precisa ser gerado em um computador macOS e pode exigir
+assinatura/notarização da Apple antes da instalação.
+
 ## Avaliações do sistema
 
 ### Nota geral: 4,9/5
