@@ -65,6 +65,23 @@ http://localhost:3000
 npm run build
 ```
 
+## Aplicativo para PC (Windows)
+
+O projeto também pode ser executado como aplicativo Windows usando Electron:
+
+```bash
+npm install
+npm run desktop:dev
+```
+
+Para gerar o instalador e a versão portátil:
+
+```bash
+npm run desktop:build
+```
+
+Os arquivos serão criados na pasta `release/`.
+
 ## Avaliações do sistema
 
 ### Nota geral: 4,9/5
