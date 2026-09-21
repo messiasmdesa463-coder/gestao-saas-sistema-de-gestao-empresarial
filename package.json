@@ -12,7 +12,7 @@
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
     "desktop:dev": "concurrently -k \"vite --port=3000\" \"wait-on http://localhost:3000 && electron electron/main.cjs\"",
-    "desktop:build": "npm run build && electron-builder --win",
+    "desktop:build": "npm run build && electron-builder --win --publish never",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit"
@@ -54,6 +54,7 @@
     "appId": "com.gestaosaas.desktop",
     "productName": "GestãoSaaS",
     "asar": true,
+    "publish": null,
     "files": [
       "dist/**/*",
       "electron/**/*",
@@ -65,6 +66,9 @@
         "portable"
       ],
       "artifactName": "GestaoSaaS-${version}-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "GestaoSaaS-${version}-${arch}-portable.${ext}"
     },
     "mac": {
       "category": "public.app-category.business",
